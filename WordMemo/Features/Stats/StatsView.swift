@@ -62,8 +62,10 @@ struct StatsView: View {
             }
             .navigationTitle("统计")
             .task { reloadIfNeeded() }
-            .onChange(of: activeBookID) { reloadIfNeeded() }
-            .onChange(of: dataRevision.revision) { reloadIfNeeded() }
+            .onAppear { reloadIfNeeded() }
+            // 数据/词书变化时只标记失效，页面可见时才真正查询
+            .onChange(of: activeBookID) { loadedBookID = "" }
+            .onChange(of: dataRevision.revision) { loadedRevision = -1 }
         }
     }
 

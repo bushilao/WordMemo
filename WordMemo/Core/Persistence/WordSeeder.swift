@@ -18,6 +18,9 @@ enum WordSeeder {
     }
 
     private static func seedBook(_ book: WordBook, context: ModelContext) {
+        // 已删除的词书不再灌入
+        guard !WordBookCatalog.deletedIDs.contains(book.id) else { return }
+
         let bookID = book.id
         var descriptor = FetchDescriptor<WordItem>(predicate: #Predicate { $0.book == bookID })
         descriptor.fetchLimit = 1

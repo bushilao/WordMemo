@@ -11,6 +11,7 @@ struct WordBook: Identifiable, Equatable {
 
 enum WordBookCatalog {
     static let defaultBookID = "gaokao"
+    static let deletedKey = "deletedBookIDs"
 
     static let all: [WordBook] = [
         WordBook(id: "junior", title: "初中英语词汇", subtitle: "2011 词 · 中考大纲"),
@@ -21,7 +22,34 @@ enum WordBookCatalog {
         WordBook(id: "basic", title: "基础入门 30 词", subtitle: "30 词 · 体验用"),
     ]
 
+    static var deletedIDs: Set<String> {
+        get {
+            let raw = UserDefaults.standard.string(forKey: deletedKey) ?? ""
+            return Set(raw.split(separator: ",").map(String.init))
+        }
+        set {
+            UserDefaults.standard.set(newValue.joined(separator: ","), forKey: deletedKey)
+        }
+    }
+
+    /// 未被删除的词书
+    static var available: [WordBook] {
+        all.filter { !deletedIDs.contains($0.id) }
+    }
+
     static func book(id: String) -> WordBook {
-        all.first { $0.id == id } ?? all[0]
+        available.first { $0.id == id } ?? available.first ?? all[0]
+    }
+
+    static func deleteBook(_ id: String) {
+        var ids = deletedIDs
+        ids.insert(id)
+        deletedIDs = ids
+    }
+
+    static func restoreBook(_ id: String) {
+        var ids = deletedIDs
+        ids.remove(id)
+        deletedIDs = ids
     }
 }

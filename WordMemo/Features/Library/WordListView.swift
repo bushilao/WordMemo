@@ -12,6 +12,8 @@ struct WordListView: View {
     @State private var searchText = ""
     @State private var loadedRevision = -1
     @State private var loadedBookID = ""
+    @State private var showingBookManager = false
+    @AppStorage(WordBookCatalog.deletedKey) private var deletedRaw = ""
 
     private var filtered: [WordItem] {
         if searchText.isEmpty { return words }
@@ -49,7 +51,7 @@ struct WordListView: View {
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Menu {
-                        ForEach(WordBookCatalog.all) { book in
+                        ForEach(WordBookCatalog.available) { book in
                             Button {
                                 activeBookID = book.id
                             } label: {
@@ -59,6 +61,12 @@ struct WordListView: View {
                                     Text(book.title)
                                 }
                             }
+                        }
+                        Divider()
+                        Button {
+                            showingBookManager = true
+                        } label: {
+                            Label("管理词书", systemImage: "gearshape")
                         }
                     } label: {
                         Label("切换词书", systemImage: "books.vertical")
@@ -71,8 +79,14 @@ struct WordListView: View {
                 }
             }
             .task { reloadIfNeeded() }
-            .onChange(of: activeBookID) { reloadIfNeeded() }
-            .onChange(of: dataRevision.revision) { reloadIfNeeded() }
+            .onAppear { reloadIfNeeded() }
+            .sheet(isPresented: $showingBookManager) {
+                BookManagerView()
+            }
+            // 数据/词书变化时只标记失效，页面可见时才真正查询
+            .onChange(of: activeBookID) { loadedBookID = "" }
+            .onChange(of: dataRevision.revision) { loadedRevision = -1 }
+            .onChange(of: deletedRaw) { loadedBookID = "" }
         }
     }
 

@@ -104,15 +104,20 @@ struct TodayView: View {
                     session = StudySessionConfig(words: Array(words.prefix(5)))
                 }
             }
-            .onChange(of: activeBookID) { reloadIfNeeded() }
-            .onChange(of: dataRevision.revision) { reloadIfNeeded() }
+            .onAppear { reloadIfNeeded() }
+            // 数据/词书变化时只标记失效，页面可见时才真正查询
+            .onChange(of: activeBookID) { loadedBookID = "" }
+            .onChange(of: dataRevision.revision) { loadedRevision = -1 }
         }
     }
 
-    /// 仅当数据版本或词书变化时才查询（避免切 Tab 时空查数据库）
+    /// 仅当数据版本或词书变化时才查询（避免切 Tab/切词书时空查数据库）
     private func reloadIfNeeded() {
         guard loadedRevision != dataRevision.revision || loadedBookID != activeBookID else { return }
-        let descriptor = FetchDescriptor<WordItem>(sortBy: [SortDescriptor(\.dueDate)])
+        let descriptor = FetchDescriptor<WordItem>(
+            predicate: #Predicate { $0.book == activeBookID },
+            sortBy: [SortDescriptor(\.dueDate)]
+        )
         allWords = (try? modelContext.fetch(descriptor)) ?? []
         loadedRevision = dataRevision.revision
         loadedBookID = activeBookID
